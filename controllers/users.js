@@ -150,10 +150,33 @@ export const getRefreshtoken = async (req, res) => {
 		res.status(500).json({ message: err.message });
 	}
 };
+export const forgotPassword = async (req, res) => {
+	try {
+		const { email } = req.body;
+		const user = await pool.query(
+			'SELECT id, username, email, phone, role FROM users WHERE id = $1',
+			[email]
+		);
+		if (user.rows.length === 0) {
+			return res
+				.status(400)
+				.json({ message: 'if email exist you will receive a message!' });
+		}
+		res.status(200).json({ message: 'Password recovery email sent' });
+	} catch (error) {
+		console.log(error);
+		res.status(500).send(error.message);
+	}
+};
 export const passwordRecovery = async (req, res) => {
 	const { email } = req.body;
-	// Implement password recovery logic, such as sending a recovery email
-	res.send('Password recovery email sent');
+	try {
+		// Implement password recovery logic, such as sending a recovery email
+		res.send('Password recovery email sent');
+	} catch (error) {
+		console.log(error);
+		res.status(500).send(error.message);
+	}
 };
 // get users minus there passwords and avatar fro each users
 export const getUsers = async (req, res) => {

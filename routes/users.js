@@ -11,6 +11,7 @@ import {
 	getRefreshtoken,
 	updateUser,
 	changePassword,
+	forgotPassword,
 	updateAvatar,
 } from '../controllers/users.js';
 import auth from '../middlewares/auth.js';
@@ -25,7 +26,7 @@ router.post('/change-password', auth, changePassword);
 router.post('/register', register);
 router.post('/refresh-token', getRefreshtoken);
 router.post('/login', login);
-router.post('/forgot-password', passwordRecovery);
+router.post('/forgot-password', forgotPassword);
 router.post('/password-recovery', passwordRecovery);
 router.patch('/avatar', auth, upload.single('avatar'), updateAvatar);
 router.patch('/:id', auth, upload.single('file'), updateUser);
