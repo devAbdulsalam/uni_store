@@ -16,6 +16,9 @@ app.use(bodyParser.json());
 
 // console.log('hello');
 app.use(cors());
+app.use('/welcome', (req, res) => {
+	res.status(200).json({ message: 'Welcome to unistore api' });
+});
 app.use('/users', userRoutes);
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
@@ -24,7 +27,7 @@ app.use('/reports', reportRoutes);
 // app.use('/setup', setupRoutes);
 
 app.use('/', (req, res) => {
-	res.sendStatus(200);
+	res.status(200).json({ message: 'Page not found' });
 });
 
 const PORT = process.env.PORT || 3000;
