@@ -78,7 +78,13 @@ export const getOrder = async (req, res) => {
 };
 
 export const createOrder = async (req, res) => {
-	const { user_id = req.user.id, product_id, quantity, total } = req.body;
+	const {
+		user_id = req.user.id,
+		product_id,
+		quantity,
+		total,
+		status = 'PENDING',
+	} = req.body;
 
 	try {
 		// Check if the product exists and has enough quantity
@@ -107,8 +113,8 @@ export const createOrder = async (req, res) => {
 
 		// Insert the new order
 		const result = await pool.query(
-			'INSERT INTO orders (user_id, product_id, quantity, total) VALUES ($1, $2, $3, $4) RETURNING *',
-			[user_id, product_id, quantity, total]
+			'INSERT INTO orders (user_id, product_id, quantity, total, status) VALUES ($1, $2, $3, $4) RETURNING *',
+			[user_id, product_id, quantity, total, status]
 		);
 
 		res.json(result.rows[0]);
