@@ -113,7 +113,7 @@ export const createOrder = async (req, res) => {
 
 		// Insert the new order
 		const result = await pool.query(
-			'INSERT INTO orders (user_id, product_id, quantity, total, status) VALUES ($1, $2, $3, $4) RETURNING *',
+			'INSERT INTO orders (user_id, product_id, quantity, total, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
 			[user_id, product_id, quantity, total, status]
 		);
 
