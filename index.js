@@ -13,9 +13,10 @@ import reportRoutes from './routes/reports.js';
 
 const app = express();
 app.use(bodyParser.json());
+app.use('/public', express.static('public'));
 
 // console.log('hello');
-app.use(cors());
+app.use(cors(['']));
 app.use('/welcome', (req, res) => {
 	res.status(200).json({ message: 'Welcome to unistore api' });
 });
