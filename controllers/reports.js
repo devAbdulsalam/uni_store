@@ -4,14 +4,14 @@ export const getDashboard = async (req, res) => {
 	try {
 		// Query to get total number of products
 		const totalProductsResult = await pool.query(
-			'SELECT COUNT(*) AS total FROM products'
+			'SELECT COUNT(*) AS total FROM product'
 		);
 		const totalProducts = totalProductsResult.rows[0].total;
 		// get 10 recent products
 		const recentProducts = await pool.query(
 			'SELECT * FROM products ORDER BY created_at DESC LIMIT 10'
 		);
-		const productImages = await pool.query('SELECT * FROM product_images');
+		const productImages = await pool.query('SELECT * FROM product_image');
 
 		// Loop through products and add image URL based on matching ID
 		const productsWithImages = recentProducts.rows.map((product) => {
@@ -32,7 +32,7 @@ export const getDashboard = async (req, res) => {
 
 		// Query to get total number of orders
 		const totalOrdersResult = await pool.query(
-			'SELECT COUNT(*) AS total FROM orders'
+			'SELECT COUNT(*) AS total FROM order'
 		);
 		const totalOrders = totalOrdersResult.rows[0].total;
 
@@ -54,7 +54,7 @@ export const getDashboard = async (req, res) => {
 export const getSalesReports = async (req, res) => {
 	try {
 		const salesReports = await pool.query(
-			'SELECT order_date::date, SUM(total) as total_sales FROM orders GROUP BY order_date::date'
+			'SELECT order_date::date, SUM(total) as total_sales FROM order GROUP BY order_date::date'
 		);
 		res.json(salesReports.rows);
 	} catch (err) {

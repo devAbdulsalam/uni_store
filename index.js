@@ -9,6 +9,7 @@ import userRoutes from './routes/users.js';
 import productRoutes from './routes/products.js';
 import orderRoutes from './routes/orders.js';
 import reportRoutes from './routes/reports.js';
+import categoryRoutes from './routes/category.js';
 // import setupRoutes from './routes/setup.js';
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/welcome', (req, res) => {
 });
 app.use('/users', userRoutes);
 app.use('/products', productRoutes);
+app.use('/categories', categoryRoutes);
 app.use('/orders', orderRoutes);
 app.use('/reports', reportRoutes);
 

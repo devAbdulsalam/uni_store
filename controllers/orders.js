@@ -15,11 +15,11 @@ export const getOrders = async (req, res) => {
 		const orderDetails = await Promise.all(
 			orders.rows.map(async (order) => {
 				const productResult = await pool.query(
-					'SELECT id, name, price FROM products WHERE id = $1',
+					'SELECT id, name, price FROM product WHERE id = $1',
 					[order.product_id]
 				);
 				const productImage = await pool.query(
-					'SELECT url FROM product_images WHERE product_id = $1',
+					'SELECT url FROM product_image WHERE product_id = $1',
 					[order.product_id]
 				);
 				const product = {
@@ -49,11 +49,11 @@ export const getOrder = async (req, res) => {
 			return;
 		}
 		const order = singleOrder.rows[0];
-		const product = await pool.query('SELECT * FROM products WHERE id = $1', [
+		const product = await pool.query('SELECT * FROM product WHERE id = $1', [
 			order.product_id,
 		]);
 		const productImage = await pool.query(
-			'SELECT url FROM product_images WHERE product_id = $1',
+			'SELECT url FROM product_image WHERE product_id = $1',
 			[order.product_id]
 		);
 
@@ -63,7 +63,7 @@ export const getOrder = async (req, res) => {
 		);
 
 		const avatar = await pool.query(
-			'SELECT url FROM avatars WHERE user_id = $1',
+			'SELECT url FROM avatar WHERE user_id = $1',
 			[order.user_id]
 		);
 		res.json({
@@ -89,7 +89,7 @@ export const createOrder = async (req, res) => {
 	try {
 		// Check if the product exists and has enough quantity
 		const productResult = await pool.query(
-			'SELECT * FROM products WHERE id = $1',
+			'SELECT * FROM product WHERE id = $1',
 			[product_id]
 		);
 		const product = productResult.rows[0];
@@ -106,7 +106,7 @@ export const createOrder = async (req, res) => {
 
 		// Update the product quantity
 		const newQuantity = product.quantity - quantity;
-		await pool.query('UPDATE products SET quantity = $1 WHERE id = $2', [
+		await pool.query('UPDATE product SET quantity = $1 WHERE id = $2', [
 			newQuantity,
 			product_id,
 		]);

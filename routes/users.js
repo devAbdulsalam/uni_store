@@ -2,7 +2,7 @@ import express from 'express';
 import {
 	register,
 	login,
-	passwordRecovery,
+	passwordReset,
 	getUsers,
 	getAdmins,
 	getUser,
@@ -27,7 +27,7 @@ router.post('/register', register);
 router.post('/refresh-token', getRefreshtoken);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
-router.post('/password-recovery', passwordRecovery);
+router.get('/reset-password/:token', passwordReset);
 router.patch('/avatar', auth, upload.single('avatar'), updateAvatar);
 router.patch('/:id', auth, upload.single('file'), updateUser);
 router.put('/profile', auth, upload.single('file'), updateUser);

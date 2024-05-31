@@ -11,6 +11,15 @@ dotenv.config();
 export const register = async (req, res) => {
 	const { username, password, email, phone, role = 'USER' } = req.body;
 	try {
+		const emailexist = await pool.query(
+			`SELECT EXISTS (SELECT * FROM users WHERE email = $1)`,
+			[email]
+		);
+		if (emailexist.rows[0].exists) {
+			return res
+				.status(409)
+				.json({ message: 'email already in use by another user' });
+		}
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const newUser = await pool.query(
 			'INSERT INTO users (username, phone, password, email, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
@@ -48,7 +57,7 @@ export const login = async (req, res) => {
 			[userId]
 		);
 		const avatar = await pool.query(
-			'SELECT url FROM avatars WHERE user_id = $1',
+			'SELECT url FROM avatar WHERE user_id = $1',
 			[userId]
 		);
 		res.header('Authorization', token).json({
@@ -154,7 +163,7 @@ export const forgotPassword = async (req, res) => {
 	try {
 		const { email } = req.body;
 		const user = await pool.query(
-			'SELECT id, username, email, phone, role FROM users WHERE id = $1',
+			'SELECT id, username, email, phone, role FROM users WHERE email = $1',
 			[email]
 		);
 		if (user.rows.length === 0) {
@@ -162,29 +171,55 @@ export const forgotPassword = async (req, res) => {
 				.status(400)
 				.json({ message: 'if email exist you will receive a message!' });
 		}
-		res.status(200).json({ message: 'Password recovery email sent' });
+		const token = await createToken({
+			id: user.rows[0].id,
+		});
+		res.status(200).json({
+			link: `${process.env.API_URL}/users/reset-password/${token}`,
+			token,
+			message: 'Password recovery link and token sent',
+		});
 	} catch (error) {
 		console.log(error);
 		res.status(500).send(error.message);
 	}
 };
-export const passwordRecovery = async (req, res) => {
-	const { email } = req.body;
+export const passwordReset = async (req, res) => {
 	try {
-		// Implement password recovery logic, such as sending a recovery email
-		res.send('Password recovery email sent');
+		const { token } = req.params;
+		const verified = jwt.verify(token, process.env.JWT_SECRET);
+		const userId = verified.id;
+		const password = '123456';
+		const hashedPassword = await bcrypt.hash(password, 10);
+		const updatedUser = await pool.query(
+			'UPDATE users SET password = $1 WHERE id = $2',
+			[hashedPassword, userId]
+		);
+		const user = await pool.query(
+			'SELECT id, username, email, phone, role FROM users WHERE id = $1',
+			[userId]
+		);
+		if (user.rows.length === 0) {
+			return res
+				.status(400)
+				.json({ message: 'if email exist you will receive a message!' });
+		}
+		res.status(200).json({
+			user: user.rows[0],
+			message: 'Password updated succefully',
+		});
 	} catch (error) {
-		console.log(error);
-		res.status(500).send(error.message);
+		res.status(400).json({ message: 'Invalid Token' });
+		// res.status(500).send(error.message);
 	}
 };
-// get users minus there passwords and avatar fro each users
+// get user minus there passwords and avatar fro each user
 export const getUsers = async (req, res) => {
 	try {
 		const allUsers = await pool.query(
 			'SELECT id, username, email, phone, role FROM users'
 		); // Select desired columns
-		const avatars = await pool.query('SELECT * FROM avatars');
+		const avatars = await pool.query('SELECT * FROM avatar');
 		const usersWithImages = allUsers.rows.map((user) => {
 			const matchingImage = avatars.rows.find(
 				(image) => image.user_id === user.id
@@ -202,24 +237,52 @@ export const getUsers = async (req, res) => {
 export const getAdmins = async (req, res) => {
 	try {
 		const users = await pool.query(
-			'SELECT  id, username, email, phone, role FROM users WHERE role = $1',
+			`
+			SELECT  u.id, u.username, u.email, u.phone, u.role,
+				(SELECT ROW_TO_JSON(avatar_obj) FROM (
+				SELECT * FROM avatar WHERE user_id = u.id 
+			) avatar_obj) AS avatar			
+			FROM users u
+			WHERE role = $1`,
 			['ADMIN']
 		);
-		const avatars = await pool.query('SELECT * FROM avatars');
-		const usersWithImages = users.rows.map((user) => {
-			const matchingImage = avatars.rows.find(
-				(image) => image.user_id === user.id
-			);
-			return {
-				...user, // Spread existing user properties
-				avatar: matchingImage ? matchingImage.url : null, // Add image URL if found, otherwise null
-			};
-		});
-		res.json(usersWithImages);
+		// const avatars = await pool.query();
+		// const usersWithImages = users.rows.map((user) => {
+		// 	const matchingImage = avatars.rows.find(
+		// 		(image) => image.user_id === user.id
+		// 	);
+		// 	return {
+		// 		...user, // Spread existing user properties
+		// 		avatar: matchingImage ? matchingImage.url : null, // Add image URL if found, otherwise null
+		// 	};
+		// });
+		// res.json(usersWithImages);
+		res.json(users.rows);
 	} catch (err) {
 		res.status(500).send(err.message);
 	}
 };
+// export const getAdmins = async (req, res) => {
+// 	try {
+// 		const users = await pool.query(
+// 			'SELECT  id, username, email, phone, role FROM users WHERE role = $1',
+// 			['ADMIN']
+// 		);
+// 		const avatars = await pool.query('SELECT * FROM avatar');
+// 		const usersWithImages = users.rows.map((user) => {
+// 			const matchingImage = avatars.rows.find(
+// 				(image) => image.user_id === user.id
+// 			);
+// 			return {
+// 				...user, // Spread existing user properties
+// 				avatar: matchingImage ? matchingImage.url : null, // Add image URL if found, otherwise null
+// 			};
+// 		});
+// 		res.json(usersWithImages);
+// 	} catch (err) {
+// 		res.status(500).send(err.message);
+// 	}
+// };
 export const getUser = async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -227,7 +290,7 @@ export const getUser = async (req, res) => {
 			'SELECT id, username, email, phone, role FROM users WHERE id = $1',
 			[id]
 		);
-		const avatar = await pool.query('SELECT * FROM avatars WHERE id = $1', [
+		const avatar = await pool.query('SELECT * FROM avatar WHERE id = $1', [
 			id,
 		]);
 
@@ -252,7 +315,7 @@ export const updateAvatar = async (req, res) => {
 		// Save the product image in the database
 		const { public_id, url } = image;
 		const avatarImage = await pool.query(
-			'INSERT INTO avatars (user_id, public_id, url) VALUES ($1, $2, $3) RETURNING *',
+			'INSERT INTO avatar (user_id, public_id, url) VALUES ($1, $2, $3) RETURNING *',
 			[id, public_id, url]
 		);
 		const user = await pool.query(
@@ -282,10 +345,10 @@ export const changePassword = async (req, res) => {
 			'UPDATE users SET password = $1 WHERE id = $2',
 			[hashedPassword, id]
 		);
-		console.log('user', user);
-		// if (user.rows.length === 0) {
-		// 	return res.status(400).json({ message: 'Username or password is wrong' });
-		// }
+		// console.log('user', user);
+		if (user.rows.length === 0) {
+			return res.status(400).json({ message: 'Username or password is wrong' });
+		}
 		res.status(200).json(user.rows[0]);
 	} catch (err) {
 		console.log(err);
@@ -302,7 +365,7 @@ export const updateUser = async (req, res) => {
 			[username, email, phone, id]
 		);
 		const avatar = await pool.query(
-			'SELECT url FROM avatars WHERE user_id = $1',
+			'SELECT url FROM avatar WHERE user_id = $1',
 			[id]
 		);
 
