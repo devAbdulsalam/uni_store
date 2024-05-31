@@ -290,9 +290,7 @@ export const getUser = async (req, res) => {
 			'SELECT id, username, email, phone, role FROM users WHERE id = $1',
 			[id]
 		);
-		const avatar = await pool.query('SELECT * FROM avatar WHERE id = $1', [
-			id,
-		]);
+		const avatar = await pool.query('SELECT * FROM avatar WHERE id = $1', [id]);
 
 		res.json({ ...user.rows[0], avatar: avatar.rows[0]?.url });
 	} catch (err) {
@@ -382,8 +380,7 @@ export const deleteUser = async (req, res) => {
 		const deletedUser = await pool.query('DELETE FROM users WHERE id = $1', [
 			id,
 		]);
-
-		res.json({ message: 'user deleted successfully' });
+		res.status(200).json({ message: 'User deleted successfully' });
 	} catch (err) {
 		res.status(500).send(err.message);
 	}
