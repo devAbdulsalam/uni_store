@@ -9,7 +9,7 @@ export const getDashboard = async (req, res) => {
 		const totalProducts = totalProductsResult.rows[0].total;
 		// get 10 recent products
 		const recentProducts = await pool.query(
-			'SELECT * FROM products ORDER BY created_at DESC LIMIT 10'
+			'SELECT * FROM product ORDER BY created_at DESC LIMIT 10'
 		);
 		const productImages = await pool.query('SELECT * FROM product_image');
 
