@@ -30,7 +30,7 @@ app.use('/reports', reportRoutes);
 // app.use('/setup', setupRoutes);
 
 app.use('/', (req, res) => {
-	res.status(200).json({ message: 'Page not found' });
+	res.status(200).json({ message: 'Welcome to api' });
 });
 
 const PORT = process.env.PORT || 3000;

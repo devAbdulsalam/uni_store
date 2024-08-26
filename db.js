@@ -5,9 +5,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+
+console.log('database', process.env.DATABASE_URL);
 const pool = new Pool({
 	connectionString: process.env.DATABASE_URL,
 });
+		
 pool.connect((err) => {
 	if (err) {
 		console.log(err);
