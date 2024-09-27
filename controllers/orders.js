@@ -1,19 +1,18 @@
 import pool from '../db.js';
+import Order from '../models/Order.js';
 
 export const getOrders = async (req, res) => {
 	try {
 		let orders;
 		if (req.user.role === 'ADMIN') {
-			orders = await pool.query('SELECT * FROM orders');
+			orders = await Order.find();
 		} else {
-			orders = await pool.query('SELECT * FROM orders WHERE user_id = $1', [
-				req.user.id,
-			]);
+			orders = await Order.find({ userId: req.user.id });
 		}
 
 		// Fetch product details for each order
 		const orderDetails = await Promise.all(
-			orders.rows.map(async (order) => {
+			orders.map(async (order) => {
 				const productResult = await pool.query(
 					'SELECT id, name, price FROM product WHERE id = $1',
 					[order.product_id]
@@ -42,11 +41,9 @@ export const getOrders = async (req, res) => {
 export const getOrder = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const singleOrder = await pool.query('SELECT * FROM orders WHERE id = $1', [
-			id,
-		]);
-		if (!singleOrder.rows[0]) {
-			return;
+		const singleOrder = await Order.findById(id);
+		if (!singleOrder) {
+			return res.status(404).json({ message: 'Order not found' });
 		}
 		const order = singleOrder.rows[0];
 		const product = await pool.query('SELECT * FROM product WHERE id = $1', [
@@ -112,12 +109,15 @@ export const createOrder = async (req, res) => {
 		]);
 
 		// Insert the new order
-		const result = await pool.query(
-			'INSERT INTO orders (user_id, product_id, quantity, total, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-			[user_id, product_id, quantity, total, status]
-		);
+		const result = await Order.create({
+			userId: user_id,
+			product_id,
+			quantity,
+			total,
+			status,
+		});
 
-		res.json(result.rows[0]);
+		res.json(result);
 	} catch (err) {
 		res.status(500).send(err.message);
 	}
@@ -142,22 +142,25 @@ export const createOrders = async (req, res) => {
 
 export const updateOrder = async (req, res) => {
 	const { id } = req.params;
-	const fields = [];
-	const values = [];
-	let query = 'UPDATE orders SET ';
+	// const fields = [];
+	// const values = [];
+	// let query = 'UPDATE orders SET ';
 
-	Object.keys(req.body).forEach((key, index) => {
-		fields.push(`${key} = $${index + 1}`);
-		values.push(req.body[key]);
-	});
+	// Object.keys(req.body).forEach((key, index) => {
+	// 	fields.push(`${key} = $${index + 1}`);
+	// 	values.push(req.body[key]);
+	// });
 
-	query +=
-		fields.join(', ') + ' WHERE id = $' + (values.length + 1) + ' RETURNING *';
-	values.push(id);
+	// query +=
+	// 	fields.join(', ') + ' WHERE id = $' + (values.length + 1) + ' RETURNING *';
+	// values.push(id);
 
 	try {
-		const updatedOrder = await pool.query(query, values);
-		res.json(updatedOrder.rows[0]);
+		const updatedOrder = await Order.findByIdAndUpdate({ id }, { ...req.body });
+		if (!updatedOrder) {
+			return res.status(404).json({ message: 'Order not found' });
+		}
+		res.json(updatedOrder);
 	} catch (err) {
 		res.status(500).send(err.message);
 	}

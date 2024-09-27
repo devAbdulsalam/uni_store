@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -34,6 +35,15 @@ app.use('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
-});
+
+/* MONGOOSE SETUP */
+mongoose
+	.connect(process.env.MONGO_URL)
+	.then(() => {
+		app.listen(PORT, () => console.log(`Server Port: ${PORT}`));
+	})
+	.catch((error) => console.log(`${error} did not connect`));
+
+// app.listen(PORT, () => {
+// 	console.log(`Server is running on port ${PORT}`);
+// });
